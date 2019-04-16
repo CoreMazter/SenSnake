@@ -12,4 +12,6 @@ public:
 
     void move();
     void turn(int direction);
+    bool crashes(Snake head);
+    void randPos();
 };

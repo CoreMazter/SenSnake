@@ -1,5 +1,5 @@
 #include "Snake.h"
-
+#include "stdlib.h"
 Snake::Snake(){
     posX=0; posY=0; maxX=20; maxY=20; minX=0; minY=0;
     direction=RIGHT;
@@ -60,4 +60,15 @@ void Snake::turn(int direction){
         default:
             break;
     }
+}
+
+bool Snake::crashes(Snake head) {
+    if (head.posX == posX && head.posY == posY)
+        return true;
+    return false;
+}
+
+void Snake::randPos(){
+    posX=(rand() % (maxX - minX + 1)) + minX;
+    posY=(rand() % (maxY - minY + 1)) + minY;    
 }
