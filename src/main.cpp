@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include "snake.h"
+
 
 void setup() {
   // put your setup code here, to run once:
