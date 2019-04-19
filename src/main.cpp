@@ -3,13 +3,15 @@
 #include "MPU6050.h"
 #include "AT24CX.h"
 
+
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 AT24C64 memory;
 MPU6050 sensor;
-Snake snake[10];
-Snake food;
-int points;
+
+Snake snake;
+Food food;
+
 
 //Reads the accelerometer and sets direction
 int getDirection(){
@@ -44,30 +46,28 @@ void eat(){
   clearChar(food.posX,food.posY,'X');
   food.randPos();
   printXY(food.posX,food.posY,'X');
-  points++;
+  snake.points++;
 }
 // Where the player plays xD
 void game(){
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  points=0;
+  snake.points=0;
   food.randPos();
-  snake[0].randPos();
+  snake.randPos();
   printXY(food.posX,food.posY,'X');
 
   while(true){
-    snake[0].turn(getDirection());
-    for (int i = points + 1; i > 0; i--)
-			snake[i] = snake[i - 1];
-    snake[0].move();
-    for (int i = 0; i <= points; i++)
-      printXY(snake[i].posX,snake[i].posY,'0');
-    clearChar(snake[points+1].posX,snake[points+1].posY,'0');
-    for(int i = 0; i < points; i++)
-      if(snake[i+1].crashes(snake[0]))
-        return;
-    if(food.crashes(snake[0]))
+    snake.turn(getDirection());
+    snake.move();
+    for (int i = 0; i < snake.points; i++)
+      printXY(snake.body[i].posX,snake.body[i].posY,'0');
+    printXY(snake.posX,snake.posY,'0');
+    clearChar(snake.body[snake.points].posX,snake.body[snake.points].posY,'0');
+    if(snake.crashes())
+      return;
+    if(snake.crashes(food.posX,food.posY))
       eat();
     display.display();
   }
@@ -107,11 +107,11 @@ void BubbleSort()
   for(int i = 0; i < 6; i++)
     num[i]=memory.readInt((i+1)*10);
   
-  for(int i = 1; i <= 5; i++)
+  for(int i = 1; i <= 6; i++)
   {
-    for (int j=0; j < 4; j++)
+    for (int j=0; j < 5; j++)
     {
-      if (num[j+1] < num[j])     
+      if (num[j] < num[j+1])     
       { 
           temp = num[j];             
           num[j] = num[j+1];
@@ -120,19 +120,18 @@ void BubbleSort()
     }
   }
 
-  for(int i = 0; i < 6; i++){
+  for(int i = 0; i < 6; i++)
     memory.writeInt((i+1)*10,num[i]);
-    Serial.println(memory.readInt((i+1)*10));
-  }
+  
   
 }
 void endGame(){
   display.clearDisplay();
   write(2,8,0,"GAME OVER");
-  memory.writeInt(60,points);
-  int fifth=memory.readInt(50);
+  memory.writeInt(60,snake.points);
+  write(1,0,20,(snake.points<=memory.readInt(50))?"YOUR SCORE ":"NEW HIGHSCORE!!!");display.print(snake.points);display.display();
   BubbleSort();
-  write(1,0,20,(fifth==memory.readInt(50))?"YOUR SCORE ":"NEW HIGHSCORE!!!");display.print(points);display.display();
+  
 
   delay(5000);
 }
@@ -144,11 +143,10 @@ void loop() {
 }
  
 void setup()   {                
-  Serial.begin(9600);
   Wire.begin();
   sensor.initialize();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 
-  snake[0]=Snake(0,0,20,7,0,0);
-  food=snake[0];
+  snake=Snake(0,0,20,7,0,0,0);
+  food=Food(0,0,20,7,0,0);
 }
