@@ -53,7 +53,7 @@ void Snake::turn(int direction){
                 Snake::direction=direction;
             break;
         case RIGHT:
-            if(Snake::direction!=UP)
+            if(Snake::direction!=LEFT)
                 Snake::direction=direction;
             break;
     

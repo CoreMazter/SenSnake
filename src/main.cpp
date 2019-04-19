@@ -7,7 +7,7 @@
 Adafruit_SSD1306 display(OLED_RESET);
 
 MPU6050 sensor;
-Snake snake[10];
+Snake snake[15];
 Snake food;
 int points;
 
@@ -27,24 +27,34 @@ int getDirection(){
   return 0;
 }
 
-//prints one char at the specified coord (disabled for the moment)
-void printXY(int x, int y, int color){
-  display.drawPixel(x,y,color);
-  display.display();
+//prints one char at the specified coord
+void printXY(int x, int y, char c){
+  display.setCursor(x*6,y*8);
+  display.print(c);
+}
+//clears one char at the specified coord
+void clearChar(int x, int y, char c){
+  display.setTextColor(BLACK);
+  display.setCursor(x*6,y*8);
+  display.print(c);
+  display.setTextColor(WHITE);
 }
 //Resets the food's position and increases one point
 void eat(){
+  clearChar(food.posX,food.posY,'X');
   food.randPos();
-  display.drawPixel(food.posX,food.posY,WHITE);
+  printXY(food.posX,food.posY,'X');
   points++;
 }
 // Where the player plays xD
 void game(){
   display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
   points=0;
   food.randPos();
   snake[0].randPos();
-  display.drawPixel(food.posX,food.posY,WHITE);
+  printXY(food.posX,food.posY,'X');
 
   while(true){
     snake[0].turn(getDirection());
@@ -52,8 +62,8 @@ void game(){
 			snake[i] = snake[i - 1];
     snake[0].move();
     for (int i = 0; i <= points; i++)
-      display.drawPixel(snake[i].posX,snake[i].posY,WHITE);
-    display.drawPixel(snake[points+1].posX,snake[points+1].posY,BLACK);
+      printXY(snake[i].posX,snake[i].posY,'0');
+    clearChar(snake[points+1].posX,snake[points+1].posY,'0');
     for(int i = 0; i < points; i++)
       if(snake[i+1].crashes(snake[0]))
         return;
@@ -62,21 +72,37 @@ void game(){
     display.display();
   }
 }
+//Writes with the specified size and coords
+void write(int textSize, int coordX, int coordY, String text){
+  display.setTextColor(WHITE);
+  display.setTextSize(textSize);
+  display.setCursor(coordX,coordY);
+  display.print(text);
+  display.display();
+}
+
+void startScreen(){
+  display.clearDisplay();
+  write(4,4,0,"SNAKE");
+  write(1,5,40,"Move 'up' to start");
+  while(getDirection()!=UP);
+  
+}
 
 void loop() {
+  startScreen();
   game();
+  //endGame();
+  //showScores();
 }
  
 void setup()   {                
   Serial.begin(9600);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  display.display();
-  delay(100);
-  display.clearDisplay();
-  display.display();
+  
 
   Wire.begin();
   sensor.initialize();   
-  snake[0]=Snake(0,0,20,20,0,0);
+  snake[0]=Snake(0,0,20,7,0,0);
   food=snake[0];
 }
