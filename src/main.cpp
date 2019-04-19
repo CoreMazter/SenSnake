@@ -1,13 +1,13 @@
-#include <Adafruit_SSD1306.h>
-#include <Arduino.h>
 #include "Snake/Snake.h"
+#include "Adafruit_SSD1306.h"
 #include "MPU6050.h"
+#include "AT24CX.h"
 
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
-
+AT24C64 memory;
 MPU6050 sensor;
-Snake snake[15];
+Snake snake[10];
 Snake food;
 int points;
 
@@ -72,6 +72,7 @@ void game(){
     display.display();
   }
 }
+
 //Writes with the specified size and coords
 void write(int textSize, int coordX, int coordY, String text){
   display.setTextColor(WHITE);
@@ -88,21 +89,66 @@ void startScreen(){
   while(getDirection()!=UP);
   
 }
+void showScores(){
+  display.clearDisplay();
+  write(2,3,0,"HIGHSCORES");
+  write(1,48,17,"1: ");display.print(memory.readInt(10)); 
+  write(1,48,26,"2: ");display.print(memory.readInt(20));
+  write(1,48,35,"3: ");display.print(memory.readInt(30)); 
+  write(1,48,44,"4: ");display.print(memory.readInt(40));
+  write(1,48,53,"5: ");display.print(memory.readInt(50));
+  display.display(); 
+  delay(5000);
+}
+void BubbleSort()
+{   
+  int temp;
+  int num[6];
+  for(int i = 0; i < 6; i++)
+    num[i]=memory.readInt((i+1)*10);
+  
+  for(int i = 1; i <= 5; i++)
+  {
+    for (int j=0; j < 4; j++)
+    {
+      if (num[j+1] < num[j])     
+      { 
+          temp = num[j];             
+          num[j] = num[j+1];
+          num[j+1] = temp;            
+      }
+    }
+  }
 
+  for(int i = 0; i < 6; i++){
+    memory.writeInt((i+1)*10,num[i]);
+    Serial.println(memory.readInt((i+1)*10));
+  }
+  
+}
+void endGame(){
+  display.clearDisplay();
+  write(2,8,0,"GAME OVER");
+  memory.writeInt(60,points);
+  int fifth=memory.readInt(50);
+  BubbleSort();
+  write(1,0,20,(fifth==memory.readInt(50))?"YOUR SCORE ":"NEW HIGHSCORE!!!");display.print(points);display.display();
+
+  delay(5000);
+}
 void loop() {
   startScreen();
   game();
-  //endGame();
-  //showScores();
+  endGame();
+  showScores();
 }
  
 void setup()   {                
   Serial.begin(9600);
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  
-
   Wire.begin();
-  sensor.initialize();   
+  sensor.initialize();
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+
   snake[0]=Snake(0,0,20,7,0,0);
   food=snake[0];
 }
